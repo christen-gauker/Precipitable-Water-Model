@@ -1,14 +1,15 @@
 from numpy import *
 import serial, time
 from datetime import datetime, timedelta
+import os
 
 tau      = 10 # Temporal resolution (1 measurement/tau seconds)
 dt       = 2 # Time offset (records data every dt seconds)
 n        = 0 # index
 
 data1    = []
-
-fname = "./file.txt"
+commit_message = "'Data dump for test location'"
+fname = "../data/file.txt"
 f = open(fname, "a+", buffering=1)
 ser = serial.Serial(port="/dev/ttyACM0", baudrate=9600)
 
@@ -24,8 +25,9 @@ def rw_Serial(data):
 
 while n < 100:
     now      = datetime.now()
-    measure1 = datetime.strptime("16:03:00", "%H:%M:%S") + timedelta(seconds=(tau * n))
-    end      = measure1 + timedelta(seconds=(dt))
+    measure1 = datetime.strptime("17:27:30", "%H:%M:%S") + timedelta(seconds=(tau * n))
+    end      = measure1 + timedelta(seconds=dt)
+    send     = measure1 + timedelta(seconds=dt+1)
 
     if now.time().strftime("%H:%M:%S") == str(measure1.time()):
         rw_Serial(data1)
@@ -33,6 +35,11 @@ while n < 100:
         f.write(str(measure1.time()) + "," + str(round(mean(array(data1)), 2)) + "\n")
         n = n + 1
         data1 = []
+        continue
+    elif now.time().strftime("%H:%M:%S") == str(send.time()):
+        os.system("git add {}".format(fname))
+        os.system("git commit -m {}".format(commit_message))
+        os.system("git push origin auto")
         continue
     else:
         continue
